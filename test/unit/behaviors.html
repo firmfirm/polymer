@@ -172,7 +172,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       behaviors: [
         Polymer.BehaviorA
-      ]
+      ],
+
+      properties: {},
+      observers: [],
+      hostAttributes: {},
+      listeners: {}
     });
 
     Polymer({
@@ -307,6 +312,14 @@ suite('single behavior element', function() {
     assert.equal(el.is, 'single-behavior');
   });
 
+  test('instance behaviors, properties, observers, hostAttributes, listeners', function() {
+    assert.isOk(el.behaviors);
+    assert.isOk(el.properties);
+    assert.isOk(el.observers);
+    assert.isOk(el.hostAttributes);
+    assert.isOk(el.listeners);
+  });
+
   test('ready from behavior', function() {
     assert.equal(el.__readyA, true);
   });
@@ -414,11 +427,7 @@ suite('multi-behaviors element', function() {
   });
 
   test('behavior is null generates warning', function() {
-    var warned = false, oldWarn = Polymer._warn;
-    Polymer._warn = function(message) {
-      assert.match(message, /behavior is null/);
-      warned = true;
-    };
+    sinon.spy(console, 'warn');
     Polymer({
       is: 'behavior-null',
       behaviors: [
@@ -426,8 +435,8 @@ suite('multi-behaviors element', function() {
       ]
     });
     document.createElement('behavior-null');
-    assert.equal(warned, true, 'Null behaviour should generate warning');
-    Polymer.Base._warn = oldWarn;
+    assert.equal(console.warn.callCount, 1, 'Null behaviour should generate warning');
+    console.warn.restore();
   });
 
   test('behavior array is unique', function() {

@@ -25,11 +25,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       registered: true,
       attributeChanged: true,
       // meta objects
-      behaviors: true,
-      hostAttributes: true,
-      properties: true,
-      observers: true,
-      listeners: true
+      behaviors: true
     }
 
     /**
@@ -54,7 +50,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       if (!Array.isArray(behaviors)) {
         behaviors = [behaviors];
       }
-      let superBehaviors = klass.behaviors;
+      let superBehaviors = klass.prototype.behaviors;
       // get flattened, deduped list of behaviors *not* already on super class
       behaviors = flattenBehaviors(behaviors, null, superBehaviors);
       // mixin new behaviors
@@ -62,7 +58,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       if (superBehaviors) {
         behaviors = superBehaviors.concat(behaviors);
       }
-      klass.behaviors = behaviors;
+      // Set behaviors on prototype for BC...
+      klass.prototype.behaviors = behaviors;
       return klass;
     }
 
@@ -126,7 +123,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
           }
         } else {
-          Polymer._warn('behavior is null, check for missing or 404 import');
+          console.warn('behavior is null, check for missing or 404 import');
         }
       }
       return list;
@@ -312,7 +309,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      */
     Polymer.Class = function(info) {
       if (!info) {
-        Polymer._warn('Polymer.Class requires `info` argument');
+        console.warn('Polymer.Class requires `info` argument');
       }
       let klass = GenerateClassFromInfo(info, info.behaviors ?
         // note: mixinBehaviors ensures `LegacyElementMixin`.
@@ -320,8 +317,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         LegacyElementMixin(HTMLElement));
       // decorate klass with registration info
       klass.is = info.is;
-      // behaviors on prototype for BC...
-      klass.prototype.behaviors = klass.behaviors;
       // NOTE: while we could call `beforeRegister` here to maintain
       // some BC, the state of the element at this point is not as it was in 1.0
       // In 1.0, the method was called *after* mixing prototypes together
