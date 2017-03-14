@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 @license
-Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
 This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
 The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
 The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
@@ -221,6 +221,10 @@ HTMLImports.whenReady(function() {
         border: 20px solid orange;
       }
 
+      .a.computedb {
+        border: 16px solid gray;
+      }
+
       #child {
         border: 16px solid tomato;
         display: block;
@@ -254,6 +258,9 @@ HTMLImports.whenReady(function() {
     <div id="priority">priority</div>
     <x-child2 class="wide" id="child2"></x-child2>
     <div id="computed" class$="{{computeClass(aClass)}}">Computed</div>
+    <div>
+      <div id="computed2" class$="a {{computeClass('computedb')}}">Computed</div>
+    </div>
     <div id="repeatContainer">
       <template id="repeat" is="dom-repeat" items="{{items}}">
         <a class$="{{aaClass}}">A Computed</a>
@@ -824,6 +831,7 @@ HTMLImports.whenReady(function() {
       assertComputed(styled.$.computed, '0px');
       styled.aClass = 'computed';
       assertComputed(styled.$.computed, '15px');
+      assertComputed(styled.$.computed2, '16px');
     });
 
     test('<a> with computed classes dynamically added', function() {
@@ -847,7 +855,7 @@ HTMLImports.whenReady(function() {
     test('styles in dynamically selected template', function() {
       var el = document.createElement('x-dynamic-template');
       document.body.appendChild(el);
-      if (el.shadyRoot) {
+      if (el.shadowRoot) {
         // style properly removed
         assert.notOk(el.querySelector('style'));
       }

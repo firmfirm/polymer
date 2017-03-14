@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 @license
-Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
 This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
 The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
 The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
@@ -329,6 +329,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       assert.equal(el.isLocalDescendant(div1), false);
       assert.equal(el.isLocalDescendant(el.$.container), true);
+    });
+
+    test('domHost', function() {
+      var el = fixture('slot');
+      assert.equal(el.domHost, document);
+      assert.equal(el.$.container.domHost, el);
+    });
+
+    test('legacy settings', function() {
+      assert.equal(Polymer.Settings.useShadow, !(window.ShadyDOM));
+      assert.equal(Polymer.Settings.useNativeCustomElements, !(window.customElements.polyfillWrapFlushCallback));
+      assert.equal(Polymer.Settings.useNativeCSSProperties, Boolean(!window.ShadyCSS || window.ShadyCSS.nativeCss));
     });
 
   })

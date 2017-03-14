@@ -2,7 +2,9 @@
 
 This branch contains a preview of the Polymer 2.0 library.  The codebase is under active development, features may not be fully implemented, and APIs may change prior to the final 2.0 release.
 
-🚧 **To evaluate Polymer 2.0**, please load the `webcomponentsjs/webcomponents-lite.js` or `webcomponentsjs/webcomponents-loader.js` polyfills from the `v1` branch of [`webcomponentsjs`](https://github.com/webcomponents/webcomponentsjs/tree/v1/)
+**To evaluate Polymer 2.0**, please load the `webcomponentsjs/webcomponents-lite.js` or `webcomponentsjs/webcomponents-loader.js` polyfills from the `v1.0.0-rc.4` tag of [`webcomponentsjs`](https://github.com/webcomponents/webcomponentsjs)
+
+👀 **Looking for Polymer v1.x?** Please see the [the v1 branch](https://github.com/Polymer/polymer/tree/1.x)
 
 ## Polymer 2.0 Goals
 
@@ -48,8 +50,7 @@ This branch contains a preview of the Polymer 2.0 library.  The codebase is unde
 
    * Changes are now batched, and the effects of those changes are run in well-defined order.
    * We ensure that multi-property observers run exactly once per turn for any set of changes to dependencies (removing the [multi-property undefined rule](https://www.polymer-project.org/1.0/docs/devguide/observers#multi-property-observers)).
-
-   * To improve compatibility with top-down data-flow approaches (e.g. Flux), we no longer dirty-check properties whose values are objects or arrays.
+   * To add compatibility with more approaches to state management, we now provide a mixin (and legacy behavior) to skip dirty-checking properties whose values are objects or arrays and always consider them dirty, causing their side effects to run.
 
 1. **Improve factoring of Polymer and the polyfills**
 
@@ -161,6 +162,7 @@ Polymer 2.0 elements will stamp their templates into shadow roots created using 
 * <a name="breaking-slot-slot"></a>Selection of distributed content into named slots must use `slot="..."` rather than tag/class/attributes selected by `<content>`
 * <a name="breaking-redistribution"></a>Re-distributing content by placing a `<slot>` into an element that itself has named slots requires placing a `name` attribute on the `<slot>` to indicate what content _it_ selects from its host children, and placing a `slot` attribute to indicate where its selected content should be slotted into its parent
 * <a name="breaking-async-distribution"></a>In the V1 "Shady DOM" shim, initial distribution of children into `<slot>` is asynchronous (microtask) to creating the `shadowRoot`, meaning distribution occurs after observers/`ready` (in Polymer 1.0's shim, initial distribution occurred before `ready`).  In order to force distribution synchronously, call `ShadyDOM.flush()`.
+* <a name="breaking-observe-nodes-flush"></a>Calling `Polymer.dom.flush` no longer results in callbacks registered with `Polymer.dom.observeNodes` being called. Instead, the object returned from `Polymer.dom.observeNodes` now contains a `flush` method which can be used to immediately call the registered callback if any changes are pending.
 
 #### Scoped styling
 
@@ -233,13 +235,6 @@ Polymer 2.0 will continue to use a [shim](https://github.com/webcomponents/shady
 
 ### Data system
 * <a name="breaking-data-init"></a>An element's template is not stamped & data system not initialized (observers, bindings, etc.) until the element has been connected to the main document.  This is a direct result of the V1 changes that prevent reading attributes in the constructor.
-* <a name="breaking-data-dirty-checking"></a>Re-setting an object or array no longer dirty checks, meaning you can make deep changes to an object/array and just re-set it, without needing to use `set`/`notifyPath`.  Although the `set` API remains and will often be the more efficient way to make changes, this change removes users of Polymer elements from needing to use this API, making it more compatible with alternate data-binding and state management libraries.
-  * To achieve the same strict equality dirty-checking that 1.x did, simply override the new `_shouldPropertyChange` method as follows:
-    ```js
-    _shouldPropertyChange(property, value, old) {
-      return value !== old;
-    }
-    ```
 * <a name="breaking-data-batching"></a>Propagation of data through the binding system is now batched, such that multi-property computing functions and observers run once with a set of coherent changes.  Single property accessors still propagate data synchronously, although there is a new `setProperties({...})` API on Polymer elements that can be used to propagate multiple values as a coherent set.
 * <a name="breaking-notify-order"></a>Property change notification event dispatch (`notify: true`) occurs after all other side effects of a property change occurs.  In 1.x notification happened after binding side effects, but before observers, which was counter-intuitive.  This rationalizes the concept of upward notification to ensure it happens after _all_ local and downward side-effects based on the change occur.  Concretely, the order of effect processing in 2.x is as follows:
   1. computed properties (`computed`)
@@ -252,6 +247,7 @@ Polymer 2.0 will continue to use a [shim](https://github.com/webcomponents/shady
 * <a name="breaking-binding-notifications>‘notify’ events are no longer fired when value changes _as result of binding from host_, as a major performance optimization over 1.x behavior.  Use cases such as `<my-el foo="{{bar}}" on-foo-changed="fooChanged">` are no longer supported.  In this case you should simply user a `bar` observer in the host.  Use cases such as dynamically adding a `property-changed` event listener on for properties bound by an element's host by an actor other than the host are no longer supported.
 * <a name="breaking-properties-deserialization"></a>In order for a property to be deserialized from its attribute, it must be declared in the `properties` metadata object
 * <a name="breaking-colleciton"></a>The `Polymer.Collection` and associated key-based path and splice notification for arrays has been eliminated.  See [explanation here](https://github.com/Polymer/polymer/pull/3970#issue-178203286) for more details.
+* <a name="feature-mutable-data"></a>While not a breaking change, Polymer now ships with a `Polymer.MutableData` mixin (and legacy `Polymer.MutableDataBehavior` behavior) to provide more options for managing data.  By default, `Polymer.PropertyEffects` performs strict dirty checking on objects, which means that any deep modifications to an object or array will not be propagated unless "immutable" data patterns are used (i.e. all object references from the root to the mutation were changed).  Polymer also provides a proprietary data mutation and path notification API (e.g. `notifyPath`, `set`, and array mutation API's) that allow efficient mutation and notification of deep changes in an object graph to all elements bound to the same object graph. In cases where neither immutable patterns or the data mutation API can be used, applying this mixin will cause Polymer to skip dirty checking for objects and arrays and always consider them to be "dirty".  This allows a user to make a deep modification to a bound object graph, and then either simply re-set the object (e.g. `this.items = this.items`) or call `notifyPath` (e.g. `this.notifyPath('items')`) to update the tree.  Note that all elements that wish to be updated based on deep mutations must apply this mixin or otherwise skip strict dirty checking for objects/arrays.
 
 ### Removed API
 * <a name="breaking-instanceof"></a>`Polymer.instanceof` and `Polymer.isInstance`: no longer needed, use
@@ -276,3 +272,18 @@ id is to use `id`.
 * <a name="breaking-attribute-property-timing"></a>Any attribute values will take priority over property values set prior to upgrade due to V1 `attributeChangedCallback` timing semantics.  In 1.x properties set prior to upgrade overrode attributes.
 * <a name="breaking-transpiling"></a>Polymer 2.0 uses ES2015 syntax, and can be run without transpilation in current Chrome, Safari 10, Safari Technology Preview, Firefox, and Edge.  Transpilation is required to run in IE11 and Safari 9.  We will be releasing tooling for development and production time to support this need in the future.
 * <a name="breaking-hostAttributes-class"></a>In Polymer 1.x, the `class` attribute was explicitly blacklisted from `hostAttributes` and never serialized. This is no longer the case using the 2.0 legacy API.
+* <a name="breaking-url-changes"></a>In Polymer 1.x, URLs in attributes and styles inside element templates were re-written to be relative to the element HTMLImport. Based on user feedback, we are changing this behavior.
+
+  Two new properties are being added to `Polymer.Element`: `importPath` and `rootPath`. The `importPath` property is a static getter on the element class that defaults to the element HTMLImport document URL and is overridable. It may be useful to override `importPath` when an element `template` is not retrieved from a `dom-module` or the element is not defined using an HTMLImport. The `rootPath` property is set to the value of `Polymer.rootPath` which is globally settable and defaults to the main document URL. It may be useful to set `Polymer.rootPath` to provide a stable application mount path when using client side routing. URL's in styles are re-written to be relative to the `importPath` property. Inside element templates, URLs in element attributes are *no longer* re-written. Instead, they should be bound using `importPath` and `rootPath` where appropriate. For example:
+
+  A Polymer 1.x template that included:
+
+  ```html
+  <img src="foo.jpg">
+  ```
+
+  in Polymer 2.x should be:
+
+  ```html
+  <img src$="[[importPath]]foo.jpg">
+  ```
