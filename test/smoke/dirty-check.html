@@ -23,12 +23,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <script>
     class XHost extends Polymer.Element {
-      static get properties() {
+      static get config() {
         return {
-          obj: {
-            observer: 'objChanged',
-          },
-        };
+          properties: {
+            obj: {
+              observer: 'objChanged'
+            }
+          }
+        }
       }
       objChanged(val, old) {
         console.log('new', val, 'old', old);

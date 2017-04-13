@@ -66,14 +66,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     static get template() {
       return Polymer.DomModule.import('x-test', 'template');
     }
-    static get properties() {
-      return {
-        prop: {
-          value: 'prop from x-class'
-        }
-      };
-    }
 
+    static get config() {
+      return {
+        properties: {
+          prop: {
+            value: 'prop from x-class'
+          }
+        }
+      }
+    }
     ready() {
       super.ready();
       console.log('x-class ready');
