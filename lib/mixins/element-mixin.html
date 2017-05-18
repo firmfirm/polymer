@@ -221,12 +221,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     function propertyDefaultsForClass(klass) {
       if (!klass.hasOwnProperty(
         JSCompiler_renameProperty('__classPropertyDefaults', klass))) {
-      	// TODO: remove when merging a fixed version of this function        
-      	klass.__classPropertyDefaults = Object.assign({}, klass.__classPropertyDefaults);
+        klass.__classPropertyDefaults = null;
         let props = propertiesForClass(klass);
         for (let p in props) {
           let info = props[p];
           if ('value' in info) {
+            klass.__classPropertyDefaults = klass.__classPropertyDefaults || {};
             klass.__classPropertyDefaults[p] = info;
           }
         }
